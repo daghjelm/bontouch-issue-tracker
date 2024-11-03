@@ -1,65 +1,14 @@
 from enum import Enum
 import uuid
-from typing import List
 from collections import deque
-
-class State(Enum):
-    TODO = 0
-    IN_PROGRESS = 1
-    DONE = 2
-
-class Type(Enum):
-    EPIC = 0
-    STORY = 1
-    TASK = 2
-
-class User:
-    def __init__(self, name):
-        self.name = name
-
-class Issue:
-    def __init__(self, id, title, type: Type):
-        self.id = id
-        self.title = title
-        self._state = State.TODO
-        self._type = type
-        self._parent: Issue = None
-        self.children: List[Issue] = []
-        self.assignee: User = None
-    
-    # type cant be changed which is why we dont have a setter
-    @property
-    def type(self):
-        return self._type
-    
-    @property
-    def parent(self):
-        return self._parent
-    
-    @property
-    def state(self):
-        return self._state
-    
-    @state.setter
-    def state(self, state: State):
-        self._state = state
-    
-    @parent.setter
-    def parent(self, parent):
-        self._parent = parent
-    
-    def remove_refs(self):
-        for child in self.children:
-            child.parent = self.parent 
-        if self.parent:
-            self.parent.children.remove(self)
-    
-    def add_child(self, child):
-        self.children.append(child)
+from issue import Issue, State, Type
+from user import User
+from typing import Dict
 
 class Board:
     def __init__(self):
-        self.issues = {}
+        self.issues: Dict[str, Issue] = {}
+        self.users: Dict[str, User] = {}
     
     def add_issue(self, title, type: Type):
         id = str(uuid.uuid4())
@@ -71,13 +20,16 @@ class Board:
         return self.issues.get(issue_id)
     
     def remove_issue(self, issue_id):
-        issue = self.get_issue(issue_id)
-        issue.remove_refs()
+        issue: Issue = self.get_issue(issue_id)
+        for child in issue.children:  
+            child.parent = issue.parent
+        if issue.parent:
+            issue.parent.children.remove(issue)
 
         self.issues.pop(issue_id)
     
-    def check_all_done(self, issue):
-        stack = deque()
+    def check_all_done(self, issue: Issue):
+        stack: deque[Issue] = deque()
         stack.append(issue)
         while len(stack) > 0:
             curr_issue = stack.pop()
@@ -110,3 +62,22 @@ class Board:
             
         child.parent = parent
         parent.add_child(child)
+    
+    def add_user(self, name):
+        id = str(uuid.uuid4())
+        user = User(id, name)
+        self.users[id] = user
+        return id
+    
+    def remove_user(self, user_id):
+        user: User = self.users.get(user_id)
+        for issue in user.issues:
+            issue.assignee = None
+        self.users.pop(user_id)
+    
+    def get_users(self):
+        return self.users
+    
+    def get_user(self, user_id):
+        return self.users.get(user_id)
+    

@@ -51,30 +51,34 @@ def test_set_issue_state(board):
     epic_id = board.add_issue("epic", Type.EPIC)
     story_id = board.add_issue("story", Type.STORY)
     task_id = board.add_issue("task", Type.TASK)
+    task_id2 = board.add_issue("task2", Type.TASK)
 
     board.set_parent_issue(task_id, story_id)
+    board.set_parent_issue(task_id2, story_id)
     board.set_parent_issue(story_id, epic_id)
 
     board.set_issue_state(task_id, State.IN_PROGRESS)
+    board.set_issue_state(task_id2, State.IN_PROGRESS)
     assert board.get_issue(task_id).state == State.IN_PROGRESS
 
     board.set_issue_state(story_id, State.IN_PROGRESS)
     board.set_issue_state(epic_id, State.IN_PROGRESS)
 
     with pytest.raises(ValueError):
-        board.set_issue_state(epic_id, State.DONE)
-    
-    with pytest.raises(ValueError):
         board.set_issue_state(story_id, State.DONE)
 
     board.set_issue_state(task_id, State.DONE)
 
-    # task is done, but story is not so we cannot set epic to done yet
+    with pytest.raises(ValueError):
+        board.set_issue_state(story_id, State.DONE)
+
+    board.set_issue_state(task_id2, State.DONE)
+
+    # tasks are done, but story is not so we cannot set epic to done yet
     with pytest.raises(ValueError):
         board.set_issue_state(epic_id, State.DONE)
 
     board.set_issue_state(story_id, State.DONE)
     board.set_issue_state(epic_id, State.DONE)
+
     assert board.get_issue(epic_id).state == State.DONE
-    assert board.get_issue(story_id).state == State.DONE
-    assert board.get_issue(task_id).state == State.DONE
