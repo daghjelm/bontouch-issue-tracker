@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import List
 import user
+import datetime
 
 class State(Enum):
     TODO = 0
@@ -21,6 +22,7 @@ class Issue:
         self._parent: Issue = None
         self.children: List[Issue] = []
         self.assignee: user.User = None
+        self.created_at = datetime.datetime.now()
     
     # type cant be changed which is why we dont have a setter
     @property

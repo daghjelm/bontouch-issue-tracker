@@ -3,7 +3,8 @@ import uuid
 from collections import deque
 from issue import Issue, State, Type
 from user import User
-from typing import Dict
+from typing import Dict, List
+import datetime
 
 class Board:
     def __init__(self):
@@ -76,8 +77,42 @@ class Board:
         self.users.pop(user_id)
     
     def get_users(self):
-        return self.users
+        return self.users.values()
     
     def get_user(self, user_id):
         return self.users.get(user_id)
     
+    def assign_user(self, user_id, issue_id):
+        user = self.get_user(user_id)
+        issue = self.get_issue(issue_id)
+
+        issue.assignee = user
+        user.issues.append(issue)
+    
+    def get_issues(
+        self,
+        user_id=None,
+        issue_types: List[Type]=None,
+        start_date: datetime.datetime=None,
+        end_date: datetime.datetime=None,
+        ):
+
+        issues = self.issues.values()
+        if user_id:
+            issues = filter(
+                lambda issue: issue.assignee and issue.assignee.id == user_id,
+                issues)
+        if issue_types:
+            issues = filter(
+                lambda issue: issue.type in issue_types,
+                issues)
+        if start_date:
+            issues = filter(
+                lambda issue: issue.created_at >= start_date,
+                issues)
+        if end_date:
+            issues = filter(
+                lambda issue: issue.created_at < end_date,
+                issues)
+        
+        return list(issues)
